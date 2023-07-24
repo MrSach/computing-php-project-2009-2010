@@ -1,7 +1,8 @@
 # computing-php-project-2009-2010
 My A-Level Computing project coursework with PHP source and MySQL sources.
 
-PHP and MySQL source code can be found here.
+PHP and MySQL source code can be found
+[here](https://github.com/MrSach/computing-php-project-2009-2010/tree/main/3-site/php).
 
 Although the live site has long since been decommissioned, in theory one may be able to replicate a LAMP server for testing the program.
 
