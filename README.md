@@ -9,4 +9,6 @@ The project was to design and develop a software project that used the principle
 
 After speaking with the staff regarding project ideas, we agreed for me to build a program to target the school's mentoring system.
 
-Alongside the source code there is also plenty of other documentation regrding the project.
+Alongside the source code there is also plenty of other documentation regarding the project.
+
+A few files that were not critical to this project were excluded for data protection reasons (a letter from staff and a written transcript for a meeting).
