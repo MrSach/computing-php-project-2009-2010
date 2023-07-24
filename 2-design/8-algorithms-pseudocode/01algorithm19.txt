@@ -1,0 +1,1060 @@
+For connecting to the server's database, DatabaseConnectPage:
+
+SET DatabaseHost
+SET DatabaseUser
+SET DatabasePassword
+QUERY CONNECT to server using DatabaseHost, DatabaseUser and DatabasePassword
+IF query returns result
+	SET DatabaseName
+	QUERY connect to database
+ELSE
+	OUTPUT error
+ENDIF
+
+
+
+For the login system LoginPage:
+
+OUTPUT input box for UserLogin
+OUTPUT input box for UserPassword
+OUTPUT multiple choice selection for UserType: Student, Parent and Mentor
+OUTPUT submit hyperlink to send information
+IF User inputs hyperlink request
+	INPUT UserLogin
+	INPUT UserPassword
+	INPUT UserType
+	INPUT request for ProcessLoginPage
+	Go to ProcessLoginPage
+ENDIF
+
+
+
+For processing login in ProcessLoginPage:
+
+SET session
+SET UserLogin
+SET UserPassword
+SET UserType
+IF UserType IS EQUAL TO Student
+	INPUT UserLogin into StudentLogin
+	INPUT UserPassword into StudentPassword
+	SET StudentLogin and StudentPassword
+	QUERY SEARCH StudentTable for StudentLogin, StudentFirstName, StudentSurname, StudentEmail, StudentPhonenumber, StudentForm and StudentID where StudentLogin in record IS EQUAL TO current StudentLogin and StudentPassword in record IS EQUAL TO current StudentPassword
+ENDIF
+IF UserType IS EQUAL TO Parent
+	INPUT UserLogin into ParentLogin
+	INPUT UserPassword into ParentPassword
+	SET ParentLogin and ParentPassword
+	QUERY SEARCH ParentTable for ParentLogin, ParentFirstName, ParentSurname, ParentEmail, ParentPhonenumber and ParentID where ParentLogin in record IS EQUAL TO current ParentLogin and ParentPassword in record IS EQUAL TO current ParentPassword
+ENDIF
+IF UserType IS EQUAL TO Mentor
+	INPUT UserLogin into MentorLogin
+	INPUT UserPassword into MentorPassword
+	SET MentorLogin and MentorPassword
+	QUERY SEARCH MentorTable for MentorLogin, MentorFirstName, MentorSurname, MentorEmail, MentorPhonenumber and MentorID where MentorLogin in record IS EQUAL TO current MentorLogin and MentorPassword in record IS EQUAL TO current MentorPassword
+ENDIF
+IF query returns result
+	Go to LoggedInPage
+ELSE
+	Go to LoginPage
+ENDIF
+
+
+
+For viewing the homepage after login, LoggedInPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Student
+	SET StudentLogin, StudentFirstName, StudentSurname and StudentID
+	OUTPUT StudentLogin
+	OUTPUT StudentFirstName, StudentSurname
+	OUTPUT UserType
+	OUTPUT StudentID
+ELSE IF UserType IS EQUAL TO Parent
+	SET ParentLogin, ParentFirstName, ParentSurname and ParentID
+	OUTPUT ParentLogin
+	OUTPUT ParentFirstName, ParentSurname
+	OUTPUT UserType
+	OUTPUT ParentID
+ELSE IF UserType IS EQUAL TO Mentor
+	SET MentorLogin, MentorFirstName, MentorSurname and MentorID
+	OUTPUT MentorLogin
+	OUTPUT MentorFirstName, MentorSurname
+	OUTPUT UserType
+	OUTPUT MentorID
+ENDIF
+OUTPUT hyperlink to view meetings
+IF User inputs hyperlink request
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+OUTPUT hyperlink to view contacts
+IF User inputs hyperlink request
+	INPUT request for ViewContactPage
+	Go to ViewContactPage
+ENDIF
+OUTPUT hyperlink to log out
+IF User inputs hyperlink request
+	INPUT request for LogoutPage
+	Go to LogoutPage
+ENDIF
+
+
+
+For viewing meetings, ViewMeetingPage:
+
+SET session
+IF UserType IS EQUAL TO Student
+	QUERY search StudentTable for ParentID and MentorID where StudentID in record IS EQUAL TO current StudentID
+	IF query returns result
+		SET ParentID and MentorID
+	ENDIF
+	QUERY search ParentTable for ParentFirstName, ParentSurname and ParentID where ParentID in record IS EQUAL TO current ParentID
+	IF query returns result
+		SET ParentFirstName, ParentSurname and ParentID
+		OUTPUT message including ParentFirstName, ParentSurname and ParentID
+	ELSE
+		OUTPUT message notifying that parent is missing
+	ENDIF	
+	QUERY search MentorTable for MentorFirstName, MentorSurname and MentorID where MentorID in record IS EQUAL TO current MentorID
+	IF query returns result
+		SET MentorFirstName, MentorSurname and MentorID
+		OUTPUT message including MentorFirstName, MentorSurname and MentorID
+	ELSE
+		OUTPUT message notifying that mentor is missing
+	ENDIF
+ENDIF
+IF UserType IS EQUAL TO Parent
+	QUERY search StudentTable for StudentFirstName, StudentSurname, StudentID and MentorID Where ParentID in record IS EQUAL TO current ParentID
+	IF Query returns result(s)
+		FOREACH Student returned
+			SET StudentFirstName, StudentSurname and StudentID
+			OUTPUT message including StudentFirstName, StudentSurname and StudentID
+			QUERY search MentorTable for MentorFirstName and MentorSurname where MentorID in record IS EQUAL TO current MentorID
+			IF query returns result
+				SET MentorFirstName, MentorSurname and MentorID
+				OUTPUT message including MentorFirstName, MentorSurname and MentorID who belongs to student
+			ELSE
+				OUTPUT message notifying that mentor is missing for student
+			ENDIF
+		ENDFOR
+	ELSE
+		OUTPUT message notifying that student is missing
+	ENDIF
+ENDIF
+IF UserType IS EQUAL TO Mentor
+	QUERY search StudentTable for StudentFirstName, StudentSurname, StudentID and ParentID where MentorID in record IS EQUAL TO current MentorID
+	IF query returns result(s)
+		FOREACH Student returned
+			SET StudentFirstName, StudentSurname and StudentID
+			OUTPUT message including StudentFirstName, StudentSurname and StudentID
+			QUERY search ParentTable for ParentFirstName and ParentSurname where ParentId in record IS EQUAL TO current ParentID
+			IF query returns result
+				SET ParentFirstName, ParentSurname and ParentID
+				OUTPUT message including ParentFirstName, ParentSurname and ParentID who belongs to current student
+			ELSE
+				OUTPUT message notifying Mentor that current student is missing parent
+			ENDIF
+		ENDFOR
+	ELSE
+		OUTPUT message notifying that no students are currently assigned to the Mentor
+	ENDIF
+ENDIF
+QUERY search MeetingTable for MeetingID, MeetingDate where StudentID in record IS EQUAL TO current StudentID and MentorID in record IS EQUAL TO current MentorID
+IF query returns result
+	OUTPUT table results
+	FOREACH matching record
+		SET MeetingDate and MeetingID
+		OUTPUT MeetingDate, MeetingID, MentorFirstName, MentorSurname, StudentFirstName, StudentSurname, MentorID and StudentID into table
+		OUTPUT hyperlink to view targets related to a meeting
+		IF User inputs hyperlink request
+			INPUT request for ViewTargetPage
+			Go to ViewTargetPage
+		ENDIF
+		OUTPUT hyperlink to view files related to a meeting
+		IF User inputs hyperlink request
+			INPUT request for ViewFilePage
+			Go to ViewFilePage
+		ENDIF
+		IF UserType IS EQUAL TO Mentor
+			OUTPUT hyperlink to add a meeting
+			IF Mentor inputs hyperlink request
+				INPUT request for AddMeetingPage
+				Go to AddMeetingPage
+			ENDIF
+			OUTPUT hyperlink to edit a meeting
+			IF Mentor inputs hyperlink request
+				INPUT request for EditMeetingPage
+				Go to EditMeetingPage
+			ENDIF
+			OUTPUT hyperlink to delete a meeting
+			IF Mentor inputs hyperlink request
+				INPUT request for DeleteMeetingPage
+				Go to DeleteMeetingPage
+			ENDIF
+		ENDIF
+	ENDFOR
+ELSE
+	OUTPUT message notifying User that no meetings exist yet
+	IF UserType IS EQUAL TO Mentor
+		OUTPUT message to notify Mentor to add meeting
+	ENDIF
+ENDIF
+OUTPUT hyperlink to go back to main page
+IF User inputs hyperlink request
+	INPUT request for LoggedInPage
+	Go to LoggedInPage
+ENDIF
+
+
+
+For adding a meeting, AddMeetingPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MentorID
+	SET StudentFirstName
+	SET StudentSurname
+	OUTPUT box input for MeetingDate
+	QUERY search StudentTable for StudentFirstName, StudentSurname, StudentID where MentorID in record IS EQUAL TO current MentorID
+	IF query returns results
+		FOREACH Student
+			SET StudentFirstName, StudentSurname, StudentID
+			OUTPUT multiple choice selection displaying StudentFirstName and StudentSurname
+		ENDFOR
+		OUTPUT box displaying current MentorID
+		OUTPUT box to submit information
+		QUERY search MeetingTable for MeetingID where MeetingID is highest
+		IF query returns result
+			ADD 1 to highest MeetingID in table
+			SET MeetingID
+		ELSE IF no result returned
+			SET new MeetingID to 1
+		ELSE
+			OUTPUT error
+		ENDIF 
+		OUTPUT MeetingID
+		OUTPUT hyperlink to return to meetings display without adding record
+		IF Mentor inputs hyperlink request
+			QUERY insert into table MeetingTable fields MeetingDate, MentorID, StudentID, MeetingID
+			INPUT request for ViewMeetingPage
+			Go to ViewMeetingPage
+		ENDIF
+	ELSE
+		OUTPUT notification that no student was found in the search
+	ENDIF
+ELSE
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For editing a meeting, EditMeetingPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MeetingID
+	SET MeetingDate
+	SET MentorID
+	SET StudentID
+	SET StudentFirstName
+	SET StudentSurname
+	QUERY SEARCH MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MentorID
+	IF query returns result
+		QUERY search StudentTable for StudentFirstName, StudentSurname, StudentID where MentorID in record IS EQUAL TO current MentorID
+		IF query returns results
+			FOREACH Student
+				SET StudentFirstName, StudentSurname, StudentID
+				OUTPUT multiple choice selection displaying StudentFirstName and StudentSurname
+			ENDFOR
+		ENDIF
+		OUTPUT option boxes to input MeetingDate
+		OUTPUT box displaying current MentorID, MeetingID
+		OUTPUT box to submit information
+		IF information submitted
+			IF old field property IS EQUAL TO new field property
+				Ignore replacement
+			ELSE
+				QUERY search MeetingTable, insert into fields new MeetingDate and new StudentID, overwrite existing field data
+			ENDIF
+		ENDIF
+		OUTPUT hyperlink to return to meetings display without editing record
+		IF Mentor inputs hyperlink request
+			INPUT request for ViewMeetingPage
+			Go to ViewMeetingPage
+		ENDIF
+	ELSE
+		OUTPUT message rejecting edit
+	ENDIF
+ELSE
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For deleting a meeting, DeleteMeetingPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MeetingID
+	SET MeetingDate
+	SET StudentID
+	SET StudentFirstName
+	SET StudentSurname
+	QUERY search MeetingTable where MentorID in record IS EQUAL TO current MentorID and MeetingID in record IS EQUAL TO current MeetingID
+	IF query returns result
+		OUTPUT MeetingDate, MeetingID, StudentID, StudentFirstName, StudentSurname
+		OUTPUT message asking Mentor to confirm deletion of meeting, targets and files
+		OUTPUT hyperlink for submitting permission to delete
+		IF Mentor inputs hyperlink request
+			QUERY delete MeetingID record where MeetingID in record IS EQUAL TO current MeetingID
+			QUERY delete TargetID record where MeetingID in record IS EQUAL TO current MeetingID
+			QUERY delete FileID record where MeetingID in record IS EQUAL TO current MeetingID
+			DELETE files associated with meeting
+			INPUT request for ViewMeetingPage
+			Go to ViewMeetingPage
+		ENDIF
+		OUTPUT hyperlink to return to meetings display without deleting record
+		IF Mentor inputs hyperlink request
+			INPUT request for ViewMeetingPage
+			Go to ViewMeetingPage
+		ENDIF
+	ELSE
+		OUTPUT message notifying Mentor that they cannot delete meeting
+	ENDIF
+ELSE
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For viewing meeting targets, ViewTargetPage:
+
+SET session
+SET UserType
+SET MeetingID
+QUERY search MeeitngTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MentorID
+IF query returns result
+	QUERY search TargetTable for TargetID, StudentTarget, MentorTarget, StudentComment, ParentComment, MentorComment, DateDue, TargetMetYet where MeetingID in record IS EQUAL TO MeetingID
+	IF query returns result
+		FOREACH result
+			OUTPUT table results
+			OUTPUT MeetingID, TargetID, StudentTarget, MentorTarget
+			OUTPUT StudentComment
+			IF UserType IS EQUAL TO Student
+				OUTPUT hyperlink to edit StudentComment
+			ENDIF
+			OUTPUT ParentComment
+			IF UserType IS EQUAL TO Parent
+				OUTPUT hyperlink to edit ParentComment
+			ENDIF
+			OUTPUT MentorComment
+			IF UserType IS EQUAL TO Mentor
+				OUTPUT hyperlink to edit MentorComment
+			ENDIF
+			OUTPUT DateDue, TargetMetYet
+			IF UserType IS EQUAL TO Mentor
+				OUTPUT hyperlink to edit target
+				IF Mentor inputs hyperlink request
+					INPUT request for EditTargetPage
+					Go to EditTargetPage
+				ENDIF
+				OUTPUT hyperlink to delete target
+				IF Mentor inputs hyperlink request
+					INPUT request for DeleteTargetPage
+					Go to DeleteTargetPage
+				ENDIF
+			ENDIF
+		ENDFOR
+	ELSE
+		OUTPUT message notifying User that there are currently no targets for the meeting
+		IF UserType IS EQUAL TO Mentor
+			OUTPUT additional message notifying Mentor to add target
+		ENDIF
+	ENDIF
+ELSE
+	Reject access to meeting targets and notify user
+ENDIF
+IF UserType IS EQUAL TO Mentor
+	OUTPUT hyperlink for adding target
+	IF Mentor inputs hyperlink request
+		INPUT request for AddTargetPage
+		Go to AddTargetPage
+	ENDIF
+ENDIF
+OUTPUT hyperlink for viewing meetings
+IF User clicks on hyperlink
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For adding a target, AddTargetPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MeetingID
+	SET MentorID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MentorID
+	IF query returns result
+		QUERY search TargetTable for highest TargetID in record
+		IF query returns result
+			ADD 1 to highest TargetID
+		ElSE
+			SET TargetID to 1
+		ENDIF
+		SET TargetID
+		OUTPUT box inputs for StudentTarget, MentorTarget, DateDue and MentorComment
+		OUTPUT hyperlink for submitting new record
+		IF Mentor inputs hyperlink request
+			QUERY insert into TargetTable fields MeetingID, TargetID, StudentTarget, MentorTarget, DateDue, StudentComment, ParentComment, MentorComment, TargetMetYet
+			INPUT request for ViewTargetPage
+			Go to ViewTargetPage
+		ENDIF
+	ELSE
+		OUTPUT message notifying that this meeting is not valid for Mentor to add targets
+	ENDIF
+	OUTPUT hyperlink to viewing targets without adding target
+	IF Mentor inputs hyperlink request
+		INPUT request for ViewTargetPage
+		Go to ViewTargetPage
+	ENDIF
+ELSE
+	INPUT request for ViewTargetPage
+	Go to ViewTargetPage
+ENDIF
+	
+	
+
+For editing a target, EditTargetPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MentorID
+	SET TargetID
+	SET MeetingID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MentorID
+	IF query returns result
+		QUERY search TargetTable for StudentTarget, MentorTarget, MeetingID, DateDue, StudentComment, ParentComment, MentorComment and TargetMetYet where MeetingID in record IS EQUAL TO current MeetingID and TargetID in record IS EQUAL TO current TargetID
+		IF query returns result
+			SET StudentTarget
+			SET MentorTarget
+			SET DateDue
+			SET StudentComment
+			SET ParentComment
+			SET MentorComment
+			SET TargetMetYet
+			OUTPUT box inputs for StudentTarget, MentorTarget, DateDue, MentorComment, TargetMetYet
+			OUTPUT StudentComment, ParentComment, TargetID
+			OUTPUT hyperlink to submit data
+			IF Mentor inputs hyperlink request
+				IF current field value IS EQUAL TO new field value
+					Ignore replacement
+				ELSE
+					QUERY insert into TargetID any edited fields amongst StudentTarget, MentorTarget, DateDue, MentorComment and TargetMetYet
+				ENDIF
+				INPUT rquest for ViewTargetPage
+				Go to ViewTargetPage
+			ENDIF
+		ELSE
+			OUTPUT error notification to Mentor
+		ENDIF
+	ELSE
+		OUTPUT message to notify Mentor that they cannot edit target
+	ENDIF
+	OUTPUT hyperlink to view meetings without alterations to current target
+	IF Mentor inputs hyperlink request
+		INPUT rquest for ViewTargetPage
+		Go to ViewTargetPage
+	ENDIF
+ELSE
+	INPUT request for ViewTargetPage
+	Go to ViewTargetPage
+ENDIF
+
+
+
+For deleting a target, DeleteTargetPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Mentor
+	SET MeetingID
+	SET MentorID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MeetingID
+	IF query returns result
+		SET TargetID
+		QUERY search TargetTable for StudentTarget, MentorTarget, StudentComment, ParentComment, MentorComment, DateDue, TargetMetYet where TargetID in record IS EQUAL TO current TargetID and MeetingID in record IS EQUAL TO current MeetingID
+		IF query returns results
+			SET StudentTarget, MentorTarget, StudentComment, ParentComment, MentorComment, DateDue and TargetMetYet
+			OUTPUT StudentTarget, MentorTarget, StudentComment, ParentComment, MentorComment, Datedue, TargetMetYet, TargetID, MeetingID
+			OUTPUT hyperlink to confirm deletion of record form table
+			IF Mentor inputs hyperlink request
+				QUERY delete record from table where TargetID in record IS EQUAL TO current TargetID and MeetingID in record IS EQUAL TO current MeetingID
+				INPUT request for ViewTargetPage
+				Go to ViewTargetPage
+			ENDIF
+		ELSE
+			OUTPUT error
+		ENDIF
+	ELSE
+		OUTPUT notification to Mentor rejecting deletion of the target
+	ENDIF
+	OUTPUT hyperlink to return to viewing targets
+	IF Mentor inputs hyperlink request
+		INPUT request for ViewTargetPage
+		Go to ViewTargetPage
+	ENDIF
+ELSE
+	INPUT request for ViewTargetPage
+	Go to ViewTargetPage
+ENDIF
+
+
+
+For viewing meeting files, ViewFilePage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Student
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and StudentID in record IS EQUAL TO current StudentID
+ELSE IF UserType IS EQUAL TO Parent
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and ParentID in record IS EQUAL TO current ParentID
+ELSEIF UserType IS EQUAL TO Mentor
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID ans MentorID in record IS EQUAL TO current MentorID
+ENDIF
+IF query returns result
+	QUERY search FileTable for FileName, FileExtension, FileID, MetingID, FileResourceLocation, StudentID, ParentID or MentorID
+	IF query returns result
+		FOREACH result
+			SET FileName, FileExtension, FileID, MeetingID, StudentID, ParentID, MentorID and FileResourceLocation
+			OUTPUT table results
+			OUTPUT FileName, FileExtension, FileID, MeetingID and one of StudentID, ParentID or MentorID
+			OUTPUT FileResourceLocation
+			OUTPUT hyperlink to view files using FileResourceLocation
+			IF User inputs hyperlink request
+				INPUT request for FileResourceLocation
+				Go to FileResourceLocation
+			ENDIF
+			IF UserType IS EQUAL TO Student
+				OUTPUT hyperlink to delete any file where StudentID IS NOT NULL
+				IF Student inputs hyperlink request
+					INPUT request for DeleteFilePage
+					Go to DeleteFilePage
+				ENDIF
+			ENDIF
+			IF UserType IS EQUAL TO Parent
+				OUTPUT hyperlink to delete any file where ParentID IS NOT NULL
+				IF Parent inputs hyperlink request
+					INPUT request for DeleteFilePage
+					Go to DeleteFilePage
+				ENDIF
+			ENDIF
+			IF UserType IS EQUAL TO Mentor
+				OUTPUT hyperlink to delete any file
+				IF Mentor inputs hyperlink request
+					INPUT request for DeleteFilePage
+					Go to DeleteFilePage
+				ENDIF
+			ENDIF
+		ENDFOR
+	ELSE
+		OUTPUT message notifying User that there are no files currently uploaded
+		OUTPUT message notifying User that they may choose to upload a file
+	ENDIF
+ELSE
+	OUTPUT notification that meeting does not belong to User
+ENDIF
+OUTPUT hyperlink to view meetings
+IF User inputs hyperlink request
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For adding a file to a meeting, AddFilePage:
+
+SET session
+SET UserType, MeetingID
+IF UserType IS EQUAL TO Student
+	SET StudentID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and StudentID in record IS EQUAL TO current StudentID
+ELSE IF UserType IS EQUAL TO Parent
+	SET ParentID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and ParentID in record IS EQUAL TO current ParentID
+ELSE IF UserType IS EQUAL TO Mentor
+	SET MentorID
+	QUERY search MeetingTable where MeetingID in record IS EQUAL TO current MeetingID and MentorID in record IS EQUAL TO current MentorID
+ENDIF
+IF query returns results
+	QUERY FileTable for FileSize where file belongs to user
+	IF query returns results
+		FOREACH FileSize
+			ADD to cumulative counter
+		ENDFOR
+		IF cumulative FileSize IS MORE THAN 10 MiB
+			OUTPUT message notifyng user that they have exceeded the file size limit
+			OUTPUT hyperlink to view files
+			IF User inputs hyperlink request
+				Go to ViewFilePage
+				Halt page load
+			ENDIF
+		ENDIF
+	ENDIF
+	QUERY FileTable where FileID is highest
+	IF query returns result
+		SET FileID of new file to be 1 more than current FileID
+	ELSE
+		SET FileID of new file to 1
+	ENDIF
+	OUTPUT input boxes for entering data for File upload
+	IF File to be uploaded selected
+		OUTPUT FileName, FileExt, FileSize, FileResourceLocation, FileID, associated meetingID
+		OUTPUT hyperlink to upload file and add it to database
+		IF User inputs hyperlink request
+			QUERY insert record into FileTable fields FileName, FileExt, FileSize, FileResourceLocation, MeetingID, FileID
+			IF UserType IS EQUAL TO Student
+				QUERY INSERT record into FileTable field StudentID
+			ENDIF
+			IF UserType IS EQUAL TO Parent
+				QUERY INSERT record into FileTable field ParentID
+			ENDIF
+			IF UserType IS EQUAL TO Mentor
+				QUERY INSERT record into FileTable field MentorID
+			ENDIF
+			INPUT request for ViewMeetingPage
+			Go to ViewMeetingPage
+		ENDIF
+	ENDIF
+ELSE
+	OUTPUT notification to user that meeting does not belong to user
+ENDIF
+OUTPUT hyperlink to view meetings without adding file
+IF User inputs hyperlink request
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For deleting a file from a meeting, DeleteFilePage:
+
+SET session
+SET UserType, MeetingID, FileID, FileName, FileExtension, FileSize and FileResourceLocation
+QUERY SEARCH MeetingTable where MeetingID in record IS EQUAL TO current MeetingID
+IF query returns result
+	IF UserType IS EQUAL TO Student
+		SET StudentID
+		QUERY SEARCH FileTable for StudentID where FileID in record IS EQUAL TO current FileID
+		IF Query returns result
+			VAR Deletable IS EQUAL TO True
+		ELSE
+			VAR Deletable IS EQUAL TO False
+		ENDIF
+	ELSE IF UserType IS EQUAL TO Parent
+		SET ParentID
+		QUERY SEARCH FileTable for ParentID where FileID in record IS EQUAL TO current FileID
+		IF query returns result
+			VAR Deletable IS EQUAL TO True
+		ELSE
+			VAR Deletable IS EQUAL TO False
+		ENDIF 
+	ELSE IF UserType IS EQUAL TO Mentor
+		SET MentorID
+		QUERY SEARCH FileTable where MentorID in record IS EQUAL TO current MentorID and MeetingID in record IS EQUAL TO current MeetingID
+		IF query returns result
+			VAR Deletable IS EQUAL TO True
+		ELSE
+			QUERY SEARCH StudentTable for StudentID where MentorID in record IS EQUAL TO current MentorID
+			IF query returns result
+				VAR Deletable IS EQUAL TO True
+			ELSE
+				QUERY SEARCH StudentTable for ParentID where MentorID in record IS EQUAL TO current MentorID
+				IF query returns result
+					VAR Deletable IS EQUAL TO True
+				ELSE
+					VAR Deletable IS EQUAL TO False
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+ENDIF
+IF VAR Deleteable IS True
+	OUTPUT FileName, FileExtension, FileSize, FileResourcelocation and FileID
+	OUTPUT hyperlink to confirm deletion of file
+	IF User inputs hyperlink request
+		QUERY DELETE record from FileTable where FileID in record IS EQUAL TO current FileID
+		INPUT request for ViewMeetingPage
+		Go to ViewMeetingPage
+	ENDIF
+ELSE
+	OUTPUT message notifying that file cannot be deleted by user
+ENDIF
+OUTPUT hyperlink to view meetings without deleting file
+IF User inputs hyperlink request
+	INPUT request for ViewMeetingPage
+	Go to ViewMeetingPage
+ENDIF
+
+
+
+For viewing contacts, ViewContactPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Student
+	SET StudentID
+	QUERY SEARCH StudentTable for ParentID where StudentID in record IS EQUAL TO current StudentID
+	IF query returns result
+		SET ParentID
+		QUERY SEARCH ParentTable for ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber where ParentID in record IS EQUAL TO current ParentID
+		IF query returns results
+			SET ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber
+			OUTPUT message to Student including ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber
+			OUTPUT hyperlink to delete contact
+			IF Student clicks on hyperlink
+				QUERY DELETE from StudentTable field ParentID where StudentID in record IS EQUAL TO current StudentID
+				Refresh page
+			ENDIF
+		ELSE
+			OUTPUT error
+		ENDIF
+	ELSE
+		OUTPUT message notifying Student that they are missing a parent contact
+	ENDIF
+	QUERY SEARCH StudentTable for MentorID where MentorID in record IS EQUAL TO current StudentID
+	IF query returns result
+		SET MentorID
+		QUERY SEARCH MentorTable for MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber where MentorID in record IS EQUAL TO current MentorID
+		IF query returns results
+			SET MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber
+			OUTPUT message to Student including MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber
+			OUTPUT hyperlink to delete contact
+			IF Student clicks on hyperlink
+				QUERY DELETE from StudentTable field MentorID where MentorID in record IS EQUAL TO current StudentID
+				Refresh page
+			ENDIF
+		ELSE
+			OUTPUT error
+		ENDIF
+	ELSE
+		OUTPUT message notifying Student that they are missing a mentor contact
+	ENDIF
+ELSE IF UserType IS EQUAL TO Parent
+	SET ParentID
+	QUERY SEARCH StudentTable for StudentID where ParentID in record IS EQUAL TO current ParentID
+	IF query returns results
+		SET StudentID
+		QUERY SEARCH StudentTable for StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm where ParentID in record IS EQUAL TO current ParentID
+		IF query returns results
+			FOREACH Student
+				SET StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm
+				OUTPUT StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm
+				OUTPUT hyperlink to delete Student contact
+				IF Parent inputs hyperlink request
+					QUERY DELETE from StudentTable field ParentID where ParentID in record IS EQUAL TO current ParentID
+					Refresh page
+				ENDIF
+				QUERY SEARCH StudentTable for MentorID where ParentID in record IS EQUAL TO current ParentID
+				IF query returns results
+					SET MentorID
+					QUERY SEARCH MentorTable for MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber where MentorID in record IS EQUAL TO current MentorID
+					IF query returns result
+						SET MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber
+						OUTPUT MentorFirstName, MentorSurname, MentorEmail, MentorPhoneNumber
+					ELSE
+						OUTPUT error
+					ENDIF
+				ELSE
+					OUTPUT message notifying Parent that Mentor is missing for Student
+				ENDIF
+			ENDFOR
+		ELSE
+			OUTPUT error
+		ENDIF
+	ELSE
+		OUTPUT message notifying that no students were found
+	ENDIF
+ELSE IF Usertype IS EQUAL TO Mentor
+	SET MentorID
+	QUERY SEARCH StudentTable for StudentID where MentorID in record IS EQUAL TO current MentorID
+	IF query returns results
+		SET StudentID
+		QUERY SEARCH StudentTable for StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm where MentorID in record IS EQUAL TO current MentorID
+		IF query returns results
+			FOREACH Student
+				SET StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm
+				OUTPUT StudentFirstName, StudentSurname, StudentEmail, StudentPhoneNumber, StudentForm
+				OUTPUT hyperlink to delete Student contact
+				IF Mentor inputs hyperlink request
+					QUERY DELETE from StudentTable field MentorID where MentorID in record IS EQUAL TO current MentorID
+					Refresh page
+				ENDIF
+				QUERY SEARCH StudentTable for ParentID where MentorID in record IS EQUAL TO current MentorID
+				IF query returns results
+					SET ParentID
+					QUERY SEARCH ParentTable for ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber where ParentID in record IS EQUAL TO current ParentID
+					IF query returns result
+						SET ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber
+						OUTPUT ParentFirstName, ParentSurname, ParentEmail, ParentPhoneNumber
+					ELSE
+						OUTPUT error
+					ENDIF
+				ELSE
+					OUTPUT message notifying Mentor that Parent is missing for Student
+				ENDIF
+			ENDFOR
+		ELSE
+			OUTPUT error
+		ENDIF
+	ELSE
+		OUTPUT message notifying that no students were found
+	ENDIF
+ENDIF
+QUERY SEARCH RequestTable for RequesterUserID, RequesterUserType where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType
+IF query returns results
+	FOREACH result
+		IF UserType IS EQUAL TO Parent OR Mentor
+			IF RequesterUserType IS EQUAL TO Student
+				QUERY StudentTable for StudentFirstName, StudentSurname, StudentForm where StudentID IS EQUAL TO RequesterUserID
+				IF query returns results
+					OUTPUT message displaying details of Student who added current User
+					OUTPUT hyperlink for accepting addition of contact
+					IF User inputs hyperlink request
+						QUERY INSERT into StudentTable RequesterUserID within RequesterUserType
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current StudentID AND RequesterUserType IS EQUAL TO Student
+						Refresh page
+					ENDIF
+					OUTPUT hyperlink for rejecting addition of contact
+					IF User inputs hyperlink request
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current StudentID AND RequesterUserType IS EQUAL TO Student
+						Refresh page
+					ENDIF
+				ELSE
+					OUTPUT message notifying User - Student added them but no futher details found
+				ENDIF
+			ENDIF
+		ENDIF
+		ELSE IF UserType IS EQUAL TO Student
+			IF RequesterUserType IS EQUAL TO Parent
+				QUERY ParentTable for ParentFirstName, ParentSurname where ParentID IS EQUAL TO RequesterUserID
+				IF query returns results
+					OUTPUT message displaying details of Parent who added current User
+					OUTPUT hyperlink for accepting addition of contact
+					IF User inputs hyperlink request
+						QUERY INSERT into StudentTable RequesterUserID within RequesterUserType
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current ParentID AND RequesterUserType IS EQUAL TO Parent
+						Refresh page
+					ENDIF
+					OUTPUT hyperlink for rejecting addition of contact
+					IF User inputs hyperlink request
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current ParentID AND RequesterUserType IS EQUAL TO Parent
+						Refresh page
+					ENDIF
+				ELSE
+					OUTPUT message notifying User - Parent added them but no futher details found
+				ENDIF
+			ENDIF
+			ELSE IF RequesterUserType IS EQUAL TO Mentor
+				QUERY MentorTable for MentorFirstName, MentorSurname where MentorID IS EQUAL TO RequesterUserID
+				IF query returns results
+					OUTPUT message displaying details of Mentor who added current User
+					OUTPUT hyperlink for accepting addition of contact
+					IF User inputs hyperlink request
+						QUERY INSERT into StudentTable RequesterUserID within RequesterUserType
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current MentorID AND RequesterUserType IS EQUAL TO Mentor
+						Refresh page
+					ENDIF
+					OUTPUT hyperlink for rejecting addition of contact
+					IF User inputs hyperlink request
+						QUERY DELETE from RequestTable where RequestedUserID IS EQUAL TO current UserID AND RequestedUserType IS EQUAL TO current UserType AND RequesterUserID IS EQUAL TO current MentorID AND RequesterUserType IS EQUAL TO Mentor
+						Refresh page
+					ENDIF
+				ELSE
+					OUTPUT message notifying User - Mentor added them but no futher details found
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDFOR
+ENDIF
+OUTPUT hyperlink to add contact
+IF User inputs hyperlink request
+	INPUT request for SearchContact
+	Go to SearchContact
+ENDIF
+OUTPUT hyperlink to return to main page
+IF User inputs hyperlink request
+	INPUT request for LoggedInPage
+	Go to LoggedInPage
+ENDIF
+
+
+
+For searching a contact, SearchContactPage:
+
+SET session
+SET UserType
+IF UserType IS EQUAL TO Student
+	SET StudentID
+	QUERY SEARCH StudentTable for ParentID where StudentID in record IS EQUAL TO current StudentID
+	IF query returns results
+		SET ParentID
+		QUERY SEARCH ParentTable for ParentFirstName, ParentSurname where ParentID in record IS EQUAL TO current ParentID
+		IF query returns results
+			OUTPUT message notifying Student that they have a Parent assigned to them
+		ENDIF
+	ELSE
+		OUTPUT search boxes for ParentFirstName, ParentSurname, ParentID
+		Student inputs value into boxes
+		OUTPUT hyperlink to submit search
+		IF Student clicks on hyperlink
+			INPUT field values
+			QUERY SEARCH ParentTable for any entries containing entered data from field boxes
+			IF query returns results
+				OUTPUT table results
+				FOREACH Parent
+					SET ParentFirstName, ParentSurname, ParentID
+					OUTPUT ParentFirstName, ParentSurname, ParentID
+					OUTPUT hyperlink to add Parent
+					IF Student inputs hyperlink request
+						QUERY INSERT record into RequestTable StudentID, Student UserType, ParentID, Parent UserType
+						INPUT request for ViewContactPage
+						Go to ViewContactPage
+					ENDIF
+				ENDFOR
+			ELSE
+				OUTPUT message to notify student that bo matching records were found
+			ENDIF
+		ENDIF
+	ENDIF
+	QUERY SEARCH StudentTable for MentorID where StudentID in record IS EQUAL TO current StudentID
+	IF query returns results
+		SET MentorID
+		QUERY SEARCH MentorTable for MentorFirstName, MentorSurname where MentorID in record IS EQUAL TO current MentorID
+		IF query returns results
+			OUTPUT message notifying Student that they have a Mentor assigned to them
+		ENDIF
+	ELSE
+		OUTPUT search boxes for MentorFirstName, MentorSurname, MentorID
+		Student inputs values into boxes
+		OUTPUT hyperlink to submit search
+		IF Student clicks on hyperlink
+			INPUT field values
+			QUERY SEARCH MentorTable for any entries containing entered data from field boxes
+			IF query returns results
+				OUTPUT table results
+				FOREACH Mentor
+					SET MentorFirstName, MentorSurname, MentorID
+					OUTPUT MentorFirstName, MentorSurname, MentorID
+					OUTPUT hyperlink to add Mentor
+					IF Student inputs hyperlink request
+						QUERY INSERT record into RequestTable StudentID, Student UserType, MentorID, Mentor UserType
+						INPUT request for ViewContactPage
+						Go to ViewContactPage
+					ENDIF
+				ENDFOR
+			ELSE
+				OUTPUT message to notify student that bo matching records were found
+			ENDIF
+		ENDIF
+	ENDIF
+ELSE IF UserType IS EQUAL TO Parent
+	SET ParentID
+	QUERY SEARCH StudentTable for StudentID where ParentID in record IS EQUAL TO current ParentID
+	IF query returns results
+		OUTPUT message notifying Parent that they have a Student assigned to them
+	ELSE
+		OUTPUT search boxes for StudentFirstName, StudentSurname, StudentForm, StudentID
+		Parent inputs values into boxes
+		OUTPUT hyperlink to submit search
+		IF Parent clicks on hyperlink
+			INPUT field values
+			QUERY SEARCH StudentTable for any entries containing entered data from field boxes
+			IF query returns results
+				OUTPUT table results
+				FOREACH Student
+					SET StudentFirstName, StudentSurname, StudentForm, StudentID
+					OUTPUT StudentFirstName, StudentSurname, StudentForm, StudentID
+					OUTPUT hyperlink to add Student
+					IF Parent inputs hyperlink request
+						QUERY INSERT record into StudentTable field ParentID where StudentID in record IS EQUAL TO current StudentID
+						INPUT request for ViewContactPage
+						Go to ViewContactPage
+					ENDIF
+					QUERY SEARCH StudentTable for MentorID where StudentID in record IS EQUAL TO current StudentID
+					IF query returns result
+						SET MentorID
+						QUERY SEARCH MentorTable for MentorFirstName, MentorSurname where MentorID in record IS EQUAL TO current MentorID
+						IF query returns result
+							SET MentorFirstName, MentorSurname
+							OUTPUT MentorFirstName, MentorSurname, MentorID
+						ELSE
+							OUTPUT error
+						ENDIF
+					ELSE
+						OUTPUT message notifying Parent that Student is missing Mentor
+					ENDIF
+				ENDFOR
+			ELSE
+				OUTPUT message to notify Parent that no matching records were found
+			ENDIF
+		ENDIF
+	ENDIF
+ELSE IF UserType IS EQUAL TO Mentor
+	SET MentorID
+	QUERY SEARCH StudentTable for StudentID where MentorID in record IS EQUAL TO current MentorID
+	IF query returns results
+		OUTPUT message notifying Mentor that they have a Student assigned to them
+	ELSE
+		OUTPUT search boxes for StudentFirstName, StudentSurname, StudentID
+		Mentor inputs values into boxes
+		OUTPUT hyperlink to submit search
+		IF Mentor clicks on hyperlink
+			INPUT field values
+			QUERY SEARCH StudentTable for any entries containing entered data from field boxes
+			IF query returns results
+				OUTPUT table results
+				FOREACH Student
+					SET StudentFirstName, StudentSurname, StudentForm, StudentID
+					OUTPUT StudentFirstName, StudentSurname,StudentForm, StudentID
+					OUTPUT hyperlink to add Student
+					IF Mentor inputs hyperlink request
+						QUERY INSERT record into RequestTable MentorID, Mentor UserType, StudentID, Student UserType
+						INPUT request for ViewContactPage
+						Go to ViewContactPage
+					ENDIF
+					QUERY SEARCH StudentTable for ParentID where StudentID in record IS EQUAL TO current StudentID
+					IF query returns result
+						SET ParentID
+						QUERY SEARCH ParentTable for ParentFirstName, ParentSurname where MentorID in record IS EQUAL TO current MentorID
+						IF query returns result
+							SET ParentFirstName, ParentSurname
+							OUTPUT ParentFirstName, ParentSurname, ParentID
+						ELSE
+							OUTPUT error
+						ENDIF
+					ELSE
+						OUTPUT message notifying Mentor that Student is missing Parent
+					ENDIF
+				ENDFOR
+			ELSE
+				OUTPUT message to notify Mentor that no matching records were found
+			ENDIF
+		ENDIF
+	ENDIF
+ENDIF
+OUTPUT hyperlink to view contacts
+IF User inputs hyperlink request
+	INPUT request for ViewContactPage
+	Go to ViewContactPage
+ENDIF
